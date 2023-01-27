@@ -1,14 +1,16 @@
 ﻿using System;
-namespace XenoTools
+
+namespace XenoTools.Utils
 {
 	public class ShiftJISDecoder
 	{
 
+        //Maybe change to instead just be passed the string's bytes instead of relying on the terminator and the offset?
         public static string DecodeShiftJIS(byte[] data, int offset, bool bigEndian)
         {
             string str = "";
 
-            while (data[offset] != 0)
+            while (offset < data.Length && data[offset] != 0)
             {
                 if (data[offset] < 0x80)
                 {
