@@ -5,16 +5,6 @@ using System.Text;
 namespace XenoTools.Utils {
 
 	public class PKHFileNameFinder {
-		public static byte[] hashValTable;
-		public static char[] characters = {
-		'a','b','c','d','e','f','g','h','i','j','k','l','m',
-		'n','o','p','q','r','s','t','u','v','w','x','y','z',
-		'A','B','C','D','E','F','G','H','I','J','K','L','M',
-		'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-		'0','1','2','3','4','5','6','7','8','9','-','_','(',
-		')','.'
-	};
-		public static HashValueInfo[] hashValueInfoList;
 
 		public class HashValueInfo {
 			public List<char> zeroBitChars = new List<char>();
@@ -27,6 +17,19 @@ namespace XenoTools.Utils {
 				this.charBit = charBit;
 			}
 		}
+
+		public static byte[] hashValTable;
+		public static char[] characters = {
+		'a','b','c','d','e','f','g','h','i','j','k','l','m',
+		'n','o','p','q','r','s','t','u','v','w','x','y','z',
+		'A','B','C','D','E','F','G','H','I','J','K','L','M',
+		'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+		'0','1','2','3','4','5','6','7','8','9','-','_','(',
+		')','.'
+		};
+
+		public static HashValueInfo[] hashValueInfoList;
+		public static Logger logger = new Logger("hash_string_possibilities.txt");
 
 		public static void Init(byte[] hashValTable) {
 			PKHFileNameFinder.hashValTable = hashValTable;
@@ -81,7 +84,8 @@ namespace XenoTools.Utils {
 					sb.Append("any");
 				}
 				sb.AppendLine();
-				Console.WriteLine(sb.ToString());
+				//Console.WriteLine(sb.ToString());
+				logger.Log(sb.ToString());
 			}
 		}
 

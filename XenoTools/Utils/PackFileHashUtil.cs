@@ -1,5 +1,4 @@
 ﻿using System;
-using XenoTools.FileFormats;
 
 namespace XenoTools.Utils
 {
@@ -22,7 +21,7 @@ namespace XenoTools.Utils
 		        int bitIndex = hashValTable[i] % 8;
 		        byte mask = (byte)(1 << bitIndex);
 
-                if (byteIndex < length - 1) {
+                if (byteIndex <= length - 1) {
                     if (((byte)filename[length - 1 - byteIndex] & mask) > 0) {
 						//If the index is more than 32, write to the high 32 bit variable
 						if (i >= 32) {

@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace XenoTools.FileFormats
+namespace XenoTools.Pack
 {
 
 	//PKB/PKH unpacker
@@ -34,16 +34,14 @@ namespace XenoTools.FileFormats
 		public bool isAFSArchive => afsFilename != ".afs";
     }
 
-	public class PackDecoder
+	public class PackTools
 	{
-		public PackHeader packHeader;
+		public static PackHeader packHeader;
+		public static string archiveName;
 
-		public PackDecoder()
-		{
-		}
-
-		public void Unpack(string pkbPath) {
+		public static void Unpack(string pkbPath) {
 			string pkhPath = pkbPath.Replace(".pkb", ".pkh");
+			archiveName = Path.GetFileNameWithoutExtension(pkbPath);
 
 			if (!Path.Exists(pkbPath)) {
 				Console.WriteLine("Error: could not find .pkb file.");
@@ -64,10 +62,29 @@ namespace XenoTools.FileFormats
 			UnpackPKB(pkbPath);
 		}
 
-		public void UnpackPKB(string path) {
+		public static void UnpackPKB(string path) {
 			FileStream fs = File.OpenRead(path);
 
-			string basePath = Path.GetFileNameWithoutExtension(path);
+			string basePath = "out/";
+
+			Console.WriteLine("Unpacking " + path + "...");
+
+			/*Check to see if there's a corresponding filename array, and if so use it to name the files
+			while unpacking. If not, fallback to generic names. */
+
+			bool usingFilenameArray = true;
+			string[] filenames = new string[0];
+
+			switch (Path.GetFileNameWithoutExtension(path)) {
+				case "common":
+					filenames = PKHArchiveFiles.commonPkhJpFiles;
+					break;
+				default:
+					//Fallback to generic names
+					usingFilenameArray = false;
+					break;
+			}
+
 			if (!Directory.Exists(basePath)) {
 				Directory.CreateDirectory(basePath);
 			}
@@ -77,13 +94,32 @@ namespace XenoTools.FileFormats
 				uint fileSize = packHeader.fileSizeTable[i];
 				byte[] buffer = new byte[fileSize];
 				fs.Read(buffer, 0, (int)fileSize);
-				string filename = i + ".bin";
-				File.WriteAllBytes(basePath + "/" + filename,buffer);
+
+				string filePath;
+
+				//If there is a corresponding filename list, use it, or else fallback to generic names
+				if (usingFilenameArray) {
+					filePath = filenames[i];
+				} else {
+					filePath = archiveName + "/" + i + ".bin";
+				}
+
+				string outPath = basePath + filePath;
+
+				if (!Directory.Exists(Path.GetDirectoryName(outPath))){
+					Directory.CreateDirectory(Path.GetDirectoryName(outPath));
+				}
+
+				Console.WriteLine("Unpacking " + filePath);
+
+				File.WriteAllBytes(outPath,buffer);
 			}
 		}
 
-		public void ReadPKHFile(string path) {
+		public static void ReadPKHFile(string path) {
 			byte[] data = File.ReadAllBytes(path);
+			archiveName = Path.GetFileNameWithoutExtension(path);
+
 			//The first 8 bytes are unused? always 00FE1200 and 00000002
 			//These values might relate to the version?
 			int offset = 8;
@@ -156,10 +192,12 @@ namespace XenoTools.FileFormats
 				Console.Write(packHeader.hashValTable[i] + (i < packHeader.hashValTable.Length - 1 ? "," : "\n"));
 			}
 
-			SavePKHTablesToTextFile();
+			Console.WriteLine();
+
+			//SavePKHTablesToTextFile();
 		}
 
-		public void SavePKHTablesToTextFile() {
+		public static void SavePKHTablesToTextFile() {
 			StringBuilder sb = new StringBuilder();
 
 			sb.AppendLine("File hashes:");
@@ -167,7 +205,7 @@ namespace XenoTools.FileFormats
 			for (int i = 0; i < packHeader.files; i++) {
 				ulong hash = packHeader.fileHashTable[i];
 				int bitsToPrint = packHeader.hashValTable.Length;
-				sb.AppendLine(Convert.ToString((long)hash,2).PadLeft(bitsToPrint,'0'));
+				sb.AppendLine(hash.ToString("X16"));
 			}
 
 			sb.AppendLine();
@@ -188,14 +226,14 @@ namespace XenoTools.FileFormats
 				}
 			}
 
-			File.WriteAllText("PKH Tables.txt", sb.ToString());
+			File.WriteAllText(archiveName + "_pkhtables.txt", sb.ToString());
 		}
 
-		ushort ReadUInt16(byte[] data, int offset) {
+		static ushort ReadUInt16(byte[] data, int offset) {
 			return BitConverter.ToUInt16(data.Skip(offset).Take(2).Reverse().ToArray());
 		}
 
-		uint ReadUInt32(byte[] data, int offset){
+		static uint ReadUInt32(byte[] data, int offset){
 			return BitConverter.ToUInt32(data.Skip(offset).Take(4).Reverse().ToArray());
 		}
 	}
