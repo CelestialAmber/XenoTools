@@ -9,5 +9,9 @@
     <Folder Include="Scripts\" />
     <Folder Include="Bdat\" />
     <Folder Include="Pack\" />
+    <Folder Include="Scripts\SB\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Scripts\SB\" />
   </ItemGroup>
 </Project>

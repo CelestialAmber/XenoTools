@@ -76,8 +76,26 @@ namespace XenoTools.Pack
 			string[] filenames = new string[0];
 
 			switch (Path.GetFileNameWithoutExtension(path)) {
+				case "adx":
+					filenames = PKHArchiveFiles.adxPkhFiles;
+					break;
+				case "chr":
+					filenames = PKHArchiveFiles.chrPkhFiles;
+					break;
 				case "common":
 					filenames = PKHArchiveFiles.commonPkhJpFiles;
+					break;
+				case "map":
+					filenames = PKHArchiveFiles.mapPkhFiles;
+					break;
+				case "menu":
+					filenames = PKHArchiveFiles.menuPkhJpFiles;
+					break;
+				case "obj":
+					filenames = PKHArchiveFiles.objPkhFiles;
+					break;
+				case "snd":
+					filenames = PKHArchiveFiles.sndPkhFiles;
 					break;
 				default:
 					//Fallback to generic names
@@ -94,14 +112,26 @@ namespace XenoTools.Pack
 				uint fileSize = packHeader.fileSizeTable[i];
 				byte[] buffer = new byte[fileSize];
 				fs.Read(buffer, 0, (int)fileSize);
+				List<byte> fileBytes = buffer.ToList();
+				bool isTextFile = false;
 
 				string filePath;
 
 				//If there is a corresponding filename list, use it, or else fallback to generic names
-				if (usingFilenameArray) {
+				if (usingFilenameArray && filenames[i] != "") {
 					filePath = filenames[i];
 				} else {
-					filePath = archiveName + "/" + i + ".bin";
+					//Try to determine the file extension of the current file based on its contents
+					//string fileExtension = DetermineFileExtension(buffer);
+					filePath = archiveName + "/" + i + ".bin"; // fileExtension;
+					//if (fileExtension == ".t") isTextFile = true;
+				}
+
+				//Remove any zero bytes if this file is a text file
+				if (isTextFile) {
+					int firstZeroIndex = fileBytes.IndexOf(0);
+					int bytesToRemove = (int)fileSize - firstZeroIndex;
+					fileBytes.RemoveRange(firstZeroIndex, bytesToRemove);
 				}
 
 				string outPath = basePath + filePath;
@@ -112,8 +142,26 @@ namespace XenoTools.Pack
 
 				Console.WriteLine("Unpacking " + filePath);
 
-				File.WriteAllBytes(outPath,buffer);
+				File.WriteAllBytes(outPath,fileBytes.ToArray());
 			}
+		}
+
+		//Attempts to determine the file extension of the given file
+		static string DetermineFileExtension(byte[] fileData) {
+			if(archiveName == "script") {
+				//.t file (seems to always start with //=====)
+				if (Encoding.Default.GetString(fileData.Take(3).ToArray()) == "//=") {
+					return ".t";
+				}
+
+				//Binary script (.sb)
+				if(Encoding.Default.GetString(fileData.Take(4).ToArray()) == "SB  ") {
+					return ".sb";
+				}
+			}
+
+			//Return .bin by default
+			return ".bin";
 		}
 
 		public static void ReadPKHFile(string path) {
