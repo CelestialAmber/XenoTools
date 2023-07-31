@@ -62,7 +62,7 @@ namespace XenoTools.Pack
 			UnpackPKB(pkbPath);
 		}
 
-		public static void UnpackPKB(string path) {
+		static void UnpackPKB(string path) {
 			FileStream fs = File.OpenRead(path);
 
 			string basePath = "out/";
@@ -85,6 +85,9 @@ namespace XenoTools.Pack
 				case "common":
 					filenames = PKHArchiveFiles.commonPkhJpFiles;
 					break;
+				case "eff":
+					filenames = PKHArchiveFiles.effPkhFiles;
+					break;
 				case "map":
 					filenames = PKHArchiveFiles.mapPkhFiles;
 					break;
@@ -93,6 +96,9 @@ namespace XenoTools.Pack
 					break;
 				case "obj":
 					filenames = PKHArchiveFiles.objPkhFiles;
+					break;
+				case "script":
+					filenames = PKHArchiveFiles.scriptPkhJpFiles;
 					break;
 				case "snd":
 					filenames = PKHArchiveFiles.sndPkhFiles;
@@ -120,6 +126,12 @@ namespace XenoTools.Pack
 				//If there is a corresponding filename list, use it, or else fallback to generic names
 				if (usingFilenameArray && filenames[i] != "") {
 					filePath = filenames[i];
+					string extension = Path.GetExtension(filePath);
+
+					//Check if the file is a text file (only checks .t for now)
+					if(extension == ".t") {
+						isTextFile = true;
+					}
 				} else {
 					//Try to determine the file extension of the current file based on its contents
 					//string fileExtension = DetermineFileExtension(buffer);

@@ -5,6 +5,10 @@ using System.Collections.Generic;
 using XenoTools.Bdat;
 using XenoTools.Pack;
 using XenoTools.Utils;
+using XenoTools.Scripts.SB;
+using XenoTools.AiDat;
+using XenoTools.Rev;
+using XenoTools.Formats.TPL;
 
 namespace XenoTools
 {
@@ -13,10 +17,10 @@ namespace XenoTools
 
         static void Main(string[] args)
         {
-			//UnpackPackArchive("/Users/amberbrault/Documents/Xenoblade Decomp/Game Files/Pack Files/chr.pkb");
-			//DecompressBDATArchives();
-			//CheckFilenameListHashes();
-			VerifyFilenameList();
+		}
+
+		public static void DecryptRev(string path) {
+			RevTools.DecryptRev(path);
 		}
 
 		public static void UnpackPackArchive(string path) {
@@ -24,7 +28,7 @@ namespace XenoTools
 		}
 
 		public static void FindPossibleHashStrings() {
-			string path = "/Users/amberbrault/Documents/Xenoblade Decomp/Game Files/Pack Files/font.pkh";
+			string path = "/Users/amberbrault/Documents/Xenoblade Decomp/Game Files/Pack Files/script.pkh";
 			PackTools.ReadPKHFile(path);
 			PackHeader packHeader = PackTools.packHeader;
 			List<ulong> fileHashes = packHeader.fileHashTable.ToList();
@@ -43,13 +47,13 @@ namespace XenoTools
 		public static void CheckFilenameListHashes() {
 			Logger logger = new Logger("Hash Matches.txt");
 			logger.ClearFile();
-			PackTools.ReadPKHFile("/Users/amberbrault/Documents/Xenoblade Decomp/Game Files/Pack Files/adx.pkh");
+			PackTools.ReadPKHFile("/Users/amberbrault/Documents/Xenoblade Decomp/Game Files/Pack Files/script.pkh");
 			PackHeader packHeader = PackTools.packHeader;
 			List<ulong> fileHashes = packHeader.fileHashTable.ToList();
 
 			for (int i = 0; i < fileHashes.Count; i++) {
 				bool foundMatch = false;
-				foreach (string path in PKHArchiveFiles.adxPkhFiles) {
+				foreach (string path in PKHArchiveFiles.scriptPkhJpFiles) {
 					string filename = Path.GetFileName(path);
 					ulong hash = PackFileHashUtil.CalculatePackFileHash(filename, packHeader.hashValTable);
 
@@ -64,19 +68,19 @@ namespace XenoTools
 
 				if (!foundMatch) {
 					Console.WriteLine("No match found for file {0}", i);
-					logger.Log(string.Format("No match found for file {0}", i));
+					logger.Log("");
 				}
 			}
 		}
 
 		public static void VerifyFilenameList() {
-			PackTools.ReadPKHFile("/Users/amberbrault/Documents/Xenoblade Decomp/Game Files/Pack Files/adx.pkh");
+			PackTools.ReadPKHFile("/Users/amberbrault/Documents/Xenoblade Decomp/Game Files/Pack Files/script.pkh");
 			PackHeader packHeader = PackTools.packHeader;
 			List<ulong> fileHashes = packHeader.fileHashTable.ToList();
 			bool foundMismatch = false;
 
 			for (int i = 0; i < fileHashes.Count; i++) {
-					string filename = Path.GetFileName(PKHArchiveFiles.adxPkhFiles[i]);
+					string filename = Path.GetFileName(PKHArchiveFiles.scriptPkhJpFiles[i]);
 					ulong hash = PackFileHashUtil.CalculatePackFileHash(filename, packHeader.hashValTable);
 
 					if (fileHashes[i] != hash) {

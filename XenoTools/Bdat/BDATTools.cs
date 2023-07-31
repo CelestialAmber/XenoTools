@@ -34,16 +34,16 @@ namespace XenoTools.Bdat
 		//Unpacks a .bin BDAT archive, containing multiple BDAT files back to back.
 		public static BDATCsv[] UnpackBDATArchive(byte[] data) {
 			int offset = 0;
-			int files = ReadInt(offset, data);
+			int files = MemoryUtils.ReadInt(offset, data);
 			offset += 4;
-			int archiveFileSize = ReadInt(offset, data);
+			int archiveFileSize = MemoryUtils.ReadInt(offset, data);
 			offset += 4;
 
 			int[] bdatFileOffsets = new int[files];
 			BDATCsv[] bdatCsvArray = new BDATCsv[files];
 
 			for (int i = 0; i < files; i++) {
-				bdatFileOffsets[i] = ReadInt(offset, data);
+				bdatFileOffsets[i] = MemoryUtils.ReadInt(offset, data);
 				offset += 4;
 			}
 
@@ -69,22 +69,22 @@ namespace XenoTools.Bdat
 
 			//0x0200: encrypted, 0x0000: not encrypted
 			//always unencrypted for xc1?
-			short encryptionFlag = ReadShort(offset, data); //0x4
+			short encryptionFlag = MemoryUtils.ReadShort(offset, data); //0x4
 			offset += 2;
-			short tableCategoryDataOffset = ReadShort(offset, data); //0x6
+			short tableCategoryDataOffset = MemoryUtils.ReadShort(offset, data); //0x6
 			offset += 2;
-			short entrySize = ReadShort(offset, data); //0x8
+			short entrySize = MemoryUtils.ReadShort(offset, data); //0x8
 			offset += 2;
-			short entriesDataOffset = ReadShort(offset, data); //0xA
+			short entriesDataOffset = MemoryUtils.ReadShort(offset, data); //0xA
 			offset += 2;
-			short entries = ReadShort(offset, data); //0xC
+			short entries = MemoryUtils.ReadShort(offset, data); //0xC
 			offset += 2;
-			short unknownOffset = ReadShort(offset, data); //0xE
+			short unknownOffset = MemoryUtils.ReadShort(offset, data); //0xE
 			offset += 2;
 			//The last four bytes seem to always be "00 40 00 01"
-			short unk2 = ReadShort(offset, data); //0x10
+			short unk2 = MemoryUtils.ReadShort(offset, data); //0x10
 			offset += 2;
-			short unk3 = ReadShort(offset, data); //0x12
+			short unk3 = MemoryUtils.ReadShort(offset, data); //0x12
 			offset += 2;
 
 			List<TableCategory> categoryList = new List<TableCategory>();
@@ -95,23 +95,23 @@ namespace XenoTools.Bdat
 
 			offset = tableCategoryDataOffset;
 
-			string tableName = ReadString(offset, data);
+			string tableName = MemoryUtils.ReadString(offset, data);
 			offset += tableName.Length + 1;
 
 
 			for (int i = 0; i < categories; i++) {
 				TableCategory category = new TableCategory();
 				//Read the category type data (starts at 0x20)
-				category.memberType = (BDATMemberType)ReadByte(0x20 + i * 4, data);
-				category.valType = (BDATValueType)ReadByte(0x20 + i * 4 + 1, data);
-				category.dataIndex = ReadShort(0x20 + i * 4 + 2, data);
+				category.memberType = (BDATMemberType)MemoryUtils.ReadByte(0x20 + i * 4, data);
+				category.valType = (BDATValueType)MemoryUtils.ReadByte(0x20 + i * 4 + 1, data);
+				category.dataIndex = MemoryUtils.ReadShort(0x20 + i * 4 + 2, data);
 
-				category.categoryTypeDataOffset = ReadShort(offset, data);
+				category.categoryTypeDataOffset = MemoryUtils.ReadShort(offset, data);
 				offset += 2;
-				category.unk3 = ReadShort(offset, data);
+				category.unk3 = MemoryUtils.ReadShort(offset, data);
 				offset += 2;
 				//Get the category name
-				category.name = ReadString(offset, data);
+				category.name = MemoryUtils.ReadString(offset, data);
 				offset += category.name.Length + 1;
 				if (offset % 2 == 1) offset++; //Category name strings are aligned to 2 bytes
 
@@ -166,71 +166,25 @@ namespace XenoTools.Bdat
 				case BDATValueType.None:
 					throw new NotImplementedException();
 				case BDATValueType.UInt8:
-					return ReadByte(category.dataIndex, entryData).ToString();
+					return MemoryUtils.ReadByte(category.dataIndex, entryData).ToString();
 				case BDATValueType.UInt16:
-					return ReadUInt16(category.dataIndex, entryData).ToString();
+					return MemoryUtils.ReadUInt16(category.dataIndex, entryData).ToString();
 				case BDATValueType.UInt32:
-					return ReadUInt32(category.dataIndex, entryData).ToString();
+					return MemoryUtils.ReadUInt32(category.dataIndex, entryData).ToString();
 				case BDATValueType.Int8:
-					return ReadByte(category.dataIndex, entryData).ToString();
+					return MemoryUtils.ReadByte(category.dataIndex, entryData).ToString();
 				case BDATValueType.Int16: //short
-					return ReadShort(category.dataIndex, entryData).ToString();
+					return MemoryUtils.ReadShort(category.dataIndex, entryData).ToString();
 				case BDATValueType.Int32: //int
-					return ReadInt(category.dataIndex, entryData).ToString();
+					return MemoryUtils.ReadInt(category.dataIndex, entryData).ToString();
 				case BDATValueType.String: //String pointer (16 bit)
-					ushort stringOffset = ReadUInt16(category.dataIndex, entryData);
+					ushort stringOffset = MemoryUtils.ReadUInt16(category.dataIndex, entryData);
 					//In the Japanese version, strings are in Shift-JIS
 					//TODO: make this decode the string with the correct encoding based on region
-					return ReadShiftJISString(stringOffset, bdatData);
+					return MemoryUtils.ReadShiftJISString(stringOffset, bdatData);
 				default:
 					throw new NotImplementedException("Unknown data type id " + category.valType);
 			}
-		}
-
-
-		static uint ReadUInt32(int offset, byte[] data) {
-			uint val = BitConverter.ToUInt32(data.Skip(offset).Take(4).Reverse().ToArray());
-			return val;
-		}
-
-		static int ReadInt(int offset, byte[] data) {
-			int val = BitConverter.ToInt32(data.Skip(offset).Take(4).Reverse().ToArray());
-			return val;
-		}
-
-		static ushort ReadUInt16(int offset, byte[] data) {
-			ushort val = BitConverter.ToUInt16(data.Skip(offset).Take(2).Reverse().ToArray());
-			return val;
-		}
-
-		static short ReadShort(int offset, byte[] data) {
-			short val = BitConverter.ToInt16(data.Skip(offset).Take(2).Reverse().ToArray());
-			return val;
-		}
-
-		static byte ReadByte(int offset, byte[] data) {
-			byte val = data[offset];
-			return val;
-		}
-
-		static float ReadFloat(int offset, byte[] data) {
-			float val = BitConverter.ToSingle(data.Skip(offset).Take(4).Reverse().ToArray());
-			return val;
-		}
-
-		//Reads a zero terminated string at the current offset.
-		static string ReadString(int offset, byte[] data) {
-			string str = "";
-			//Keep going until we reach the terminator byte
-			while (data[offset] != 0) {
-				str += (char)data[offset++];
-			}
-			offset++; //Increment past the terminator byte;
-			return str;
-		}
-
-		static string ReadShiftJISString(int offset, byte[] data) {
-			return ShiftJISDecoder.DecodeShiftJIS(data, offset, true);
 		}
 	}
 }

@@ -10,8 +10,25 @@
     <Folder Include="Bdat\" />
     <Folder Include="Pack\" />
     <Folder Include="Scripts\SB\" />
+    <Folder Include="AiDat\" />
+    <Folder Include="Rev\" />
+    <Folder Include="Graphics\" />
+    <Folder Include="Formats\" />
+    <Folder Include="Formats\TPL\" />
+    <Folder Include="Formats\BRRES\" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Scripts\SB\" />
+    <None Remove="AiDat\" />
+    <None Remove="Newtonsoft.Json" />
+    <None Remove="Rev\" />
+    <None Remove="Graphics\" />
+    <None Remove="Formats\" />
+    <None Remove="Formats\TPL\" />
+    <None Remove="Formats\BRRES\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.1" />
   </ItemGroup>
 </Project>

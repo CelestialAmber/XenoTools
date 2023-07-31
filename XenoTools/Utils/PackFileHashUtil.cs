@@ -12,7 +12,8 @@ namespace XenoTools.Utils
 
             //Return if the string is empty
             if (length == 0) {
-                throw new Exception("Filename is empty");
+                Console.WriteLine("Filename is empty");
+                return 0;
             }
 
     
