@@ -50,6 +50,7 @@ namespace XenoTools.Formats.TPL
 	public class TPLTools {
 
 		public static void ExtractImages(string path) {
+			Console.WriteLine("Extracting images from " + path);
 			byte[] data = File.ReadAllBytes(path);
 			ConvertTPL(data, path.Replace(".tpl", ".png"));
 		}
@@ -74,14 +75,22 @@ namespace XenoTools.Formats.TPL
 				int imageHeaderOffset = (int)MemoryUtils.ReadUInt32Update(ref offset, data);
 				int paletteHeaderOffset = (int)MemoryUtils.ReadUInt32Update(ref offset, data);
 
+				TPLImage image = new TPLImage(data, imageHeaderOffset);
+
 				//If the image has a palette, read the palette data
 				if (paletteHeaderOffset != 0) {
-					throw new NotImplementedException();
 					TPLPalette palette = new TPLPalette(data, paletteHeaderOffset);
+					image.palette = palette;
 				}
 
-				TPLImage image = new TPLImage(data, imageHeaderOffset);
-				image.ConvertToPNG(path.Replace(".png", (image.header.format == TPLImageFormat.CMPR ? "_cmpr" : "") + "_" + i + ".png"));
+				string newPath = path;
+
+				//Use numbers after if there are multiple images
+				if (imagesNum > 1) {
+					newPath = path.Replace(".png", "_" + i + ".png");
+				}
+
+				image.ConvertToPNG(newPath);
 			}
 		}
 

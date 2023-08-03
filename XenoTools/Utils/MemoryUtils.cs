@@ -62,6 +62,27 @@ namespace XenoTools.Utils
 			return val;
 		}
 
+		//TODO: find a better way to do this. maybe make this into a regular class?
+		//Keeps track of which nybble of the current byte to use
+		public static int currentNybble = 0;
+
+		public static byte ReadNybble(byte[] data, ref int offset) {
+			byte val = data[offset];
+
+			//If currentNybble is 0, use the first half
+			if (currentNybble == 0) {
+				currentNybble++;
+				val = (byte)(val >> 4);
+			} else {
+				//Otherwise, use the first half, and increment the offset to the next byte
+				currentNybble = 0;
+				offset++;
+				val = (byte)(val & 0x7);
+			}
+
+			return val;
+		}
+
 		public static float ReadFloat(int offset, byte[] data) {
 			float val = BitConverter.ToSingle(data.Skip(offset).Take(4).Reverse().ToArray());
 			return val;

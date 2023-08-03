@@ -3,7 +3,7 @@ using System.Linq;
 using XenoTools.Graphics;
 using XenoTools.Utils;
 
-namespace XenoTools.Formats
+namespace XenoTools.Formats.TPL
 {
 	/*
 	//Handles the image data found in BRRES/TPL files.
@@ -16,12 +16,17 @@ namespace XenoTools.Formats
 	IA8/RGB565/RGB5A3/RGBA8/C14X2: 4x4
 	*/
 	public class TPLImageDataUtils{
+		public static Color[] palette;
 
 		//Converts the given image data to a PNG file.
-		public static void ConvertToPng(byte[] data, int width, int height, TPLImageFormat format, string path, byte[] paletteData = null) {
+		public static void ConvertToPng(byte[] data, int width, int height, TPLImageFormat format, string path) {
 			Bitmap bitmap = new Bitmap(width, height);
 
-			currentNybble = 0;
+			if((format == TPLImageFormat.C4 || format == TPLImageFormat.C8 || format == TPLImageFormat.C14X2) && palette == null) {
+				throw new Exception("Error: The given palette cannot be null for a palette image.");
+			}
+
+			MemoryUtils.currentNybble = 0; //TODO: change this bad code
 
 			int blockSizeWidth = 4;
 			int blockSizeHeight = 4;
@@ -64,7 +69,7 @@ namespace XenoTools.Formats
 				int currentBlockHeight = blockSizeHeight;
 
 				//Account for edge blocks that are only partially used
-				if (blockIndex == blockWidth - 1 && width % blockSizeWidth != 0) {
+				if ((blockIndex % blockWidth) == blockWidth - 1 && width % blockSizeWidth != 0) {
 					currentBlockWidth = width % blockSizeWidth;
 				}
 
@@ -87,20 +92,20 @@ namespace XenoTools.Formats
 						//Calculate the 4 color palette for the current subblock from the two provided colors
 						ushort col1Val = MemoryUtils.ReadUInt16(offset, data);
 						ushort col2Val = MemoryUtils.ReadUInt16(offset + 2, data);
-						Color[] palette = new Color[4];
-						palette[0] = ReadColor(data, ref offset, TPLImageFormat.RGB565);
-						palette[1] = ReadColor(data, ref offset, TPLImageFormat.RGB565);
+						Color[] blockPalette = new Color[4];
+						blockPalette[0] = ReadColor(data, ref offset, TPLImageFormat.RGB565);
+						blockPalette[1] = ReadColor(data, ref offset, TPLImageFormat.RGB565);
 
 						if(col1Val > col2Val) {
 							//If the first color value is greater than the second, calculate the other two
 							//colors by linearly interpolating at 1/3 and 2/3 between them
-							palette[2] = Color.Lerp(palette[1], palette[0], 0.333f);
-							palette[3] = Color.Lerp(palette[1], palette[0], 0.666f);
+							blockPalette[2] = Color.Lerp(blockPalette[1], blockPalette[0], 0.333f);
+							blockPalette[3] = Color.Lerp(blockPalette[1], blockPalette[0], 0.666f);
 						} else {
 							//If the first is less than the second, the third color is calculated by
 							//linearly interpolating halfway between, and the fourth is transparent
-							palette[2] = Color.Lerp(palette[0], palette[1], 0.5f);
-							palette[3] = Color.transparent;
+							blockPalette[2] = Color.Lerp(blockPalette[0], blockPalette[1], 0.5f);
+							blockPalette[3] = Color.transparent;
 						}
 
 						//Read the pixels ahead of time to make writing them to the image easier
@@ -116,7 +121,7 @@ namespace XenoTools.Formats
 
 						for (int y = 0; y < 4; y++) {
 							for (int x = 0; x < 4; x++) {
-								Color col = palette[pixels[x, y]];
+								Color col = blockPalette[pixels[x, y]];
 								int subX = x + (j % 2) * 4;
 								int subY = y + (j / 2) * 4;
 
@@ -160,30 +165,22 @@ namespace XenoTools.Formats
 
 			switch (format) {
 				case TPLImageFormat.I4:
-					byte intensity = (byte)(255f * (ReadNybble(data, ref offset) / 15f));
-					col = new Color(intensity);
+					col = TPLColorUtil.ReadI4(data, ref offset);
 					break;
 				case TPLImageFormat.I8:
-					intensity = data[offset++];
-					col = new Color(intensity);
+					col = TPLColorUtil.ReadI8(data, ref offset);
 					break;
 				case TPLImageFormat.IA4:
-					byte val = data[offset++];
-					intensity = (byte)(255f * ((val >> 4) / 15f));
-					byte a = (byte)(255f * ((val & 0xF) / 15f));
-					col = new Color(intensity, intensity, intensity, a);
+					col = TPLColorUtil.ReadIA4(data, ref offset);
 					break;
 				case TPLImageFormat.IA8:
-					intensity = data[offset++];
-					a = data[offset++];
-					col = new Color(intensity, intensity, intensity, a);
+					col = TPLColorUtil.ReadIA8(data, ref offset);
 					break;
 				case TPLImageFormat.RGB565:
-					ushort colVal = MemoryUtils.ReadUInt16Update(ref offset, data);
-					byte r = (byte)(255f * ((colVal >> 11) / 31f));
-					byte g = (byte)(255f * ((colVal >> 5) & 0x3F) / 63f);
-					byte b = (byte)(255f * ((colVal & 0x1F) / 31f));
-					col = new Color(r, g, b);
+					col = TPLColorUtil.ReadRGB565(data, ref offset);
+					break;
+				case TPLImageFormat.RGB5A3:
+					col = TPLColorUtil.ReadRGB5A3(data, ref offset);
 					break;
 				case TPLImageFormat.RGBA8:
 					//The red/alpha and green/blue values come in two separate groups,
@@ -191,57 +188,30 @@ namespace XenoTools.Formats
 					//the data offset is only incremented by 2 here, and after each block
 					//the offset is incremented by another 32 to skip over the green/blue
 					//group.
-					a = data[offset];
-					r = data[offset + 1];
-					g = data[offset + 32];
-					b = data[offset + 33];
+					byte a = data[offset];
+					byte r = data[offset + 1];
+					byte g = data[offset + 32];
+					byte b = data[offset + 33];
 					offset += 2;
 					col = new Color(r, g, b, a);
 					break;
-				case TPLImageFormat.RGB5A3:
-					colVal = MemoryUtils.ReadUInt16Update(ref offset, data);
-
-					bool hasAlpha = (colVal >> 15) == 0;
-
-					if (hasAlpha) {
-						a = (byte)(255f * (((colVal >> 12) & 0x7) / 7f));
-						r = (byte)(255f * (((colVal >> 8) & 0xF) / 15f));
-						g = (byte)(255f * (((colVal >> 4) & 0xF) / 15f));
-						b = (byte)(255f * ((colVal & 0xF) / 15f));
-					} else {
-						a = 255;
-						r = (byte)(255f * (((colVal >> 10) & 0x1F) / 32f));
-						g = (byte)(255f * (((colVal >> 5) & 0x1F) / 32f));
-						b = (byte)(255f * ((colVal & 0x1F) / 32f));
-					}
-
-					col = new Color(r, g, b, a);
+				case TPLImageFormat.C4:
+					int palIndex = MemoryUtils.ReadNybble(data, ref offset);
+					col = palette[palIndex];
+					break;
+				case TPLImageFormat.C8:
+					palIndex = MemoryUtils.ReadByteUpdate(ref offset, data);
+					col = palette[palIndex];
+					break;
+				case TPLImageFormat.C14X2:
+					palIndex = MemoryUtils.ReadUInt16Update(ref offset, data) & 0x3FFF; //only keep the bottom 14 bits
+					col = palette[palIndex];
 					break;
 				default:
 					throw new Exception("Error: unsupported format " + format);
 			}
 
 			return col;
-		}
-
-		//Keeps track of which nybble of the current byte to use
-		public static int currentNybble = 0;
-
-		public static byte ReadNybble(byte[] data, ref int offset) {
-			byte val = data[offset];
-
-			//If currentNybble is 0, use the first half
-			if (currentNybble == 0) {
-				currentNybble++;
-				val = (byte)(val >> 4);
-			} else {
-				//Otherwise, use the first half, and increment the offset to the next byte
-				currentNybble = 0;
-				offset++;
-				val = (byte)(val & 0x7);
-			}
-
-			return val;
 		}
 	}
 }

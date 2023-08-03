@@ -103,6 +103,9 @@ namespace XenoTools.Pack
 				case "snd":
 					filenames = PKHArchiveFiles.sndPkhFiles;
 					break;
+				case "work":
+					filenames = PKHArchiveFiles.workPkhFiles;
+					break;
 				default:
 					//Fallback to generic names
 					usingFilenameArray = false;
@@ -128,8 +131,8 @@ namespace XenoTools.Pack
 					filePath = filenames[i];
 					string extension = Path.GetExtension(filePath);
 
-					//Check if the file is a text file (only checks .t for now)
-					if(extension == ".t") {
+					//Check if the file is a text file (only checks .t and .txt for now)
+					if(extension == ".t" || extension == ".txt" || extension == ".efs") {
 						isTextFile = true;
 					}
 				} else {

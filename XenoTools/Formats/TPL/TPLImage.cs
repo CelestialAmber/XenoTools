@@ -23,6 +23,7 @@ namespace XenoTools.Formats.TPL
 	public class TPLImage
 	{
 		public TPLImageHeader header;
+		public TPLPalette palette;
 		byte[] data;
 
 		public TPLImage(byte[] data, int headerOffset)
@@ -48,8 +49,13 @@ namespace XenoTools.Formats.TPL
 		}
 
 		public void ConvertToPNG(string path) {
+			//If the image has a palette, send the palette over to the decoder class
+			if(palette != null) {
+				TPLImageDataUtils.palette = palette.palette;
+			}
+
 			TPLImageDataUtils.ConvertToPng(data.Skip((int)header.imageDataAddress).ToArray(), header.width,
-				header.height, header.format, path);
+					header.height, header.format, path);
 		}
 	}
 }

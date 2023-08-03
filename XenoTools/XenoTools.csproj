@@ -16,6 +16,10 @@
     <Folder Include="Formats\" />
     <Folder Include="Formats\TPL\" />
     <Folder Include="Formats\BRRES\" />
+    <Folder Include="Resources\" />
+    <Folder Include="Formats\Criware\" />
+    <Folder Include="Scripts\Effect\" />
+    <Folder Include="Scripts\Effect\Tables\" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Scripts\SB\" />
@@ -26,6 +30,10 @@
     <None Remove="Formats\" />
     <None Remove="Formats\TPL\" />
     <None Remove="Formats\BRRES\" />
+    <None Remove="Resources\" />
+    <None Remove="Formats\Criware\" />
+    <None Remove="Scripts\Effect\" />
+    <None Remove="Scripts\Effect\Tables\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

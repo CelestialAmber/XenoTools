@@ -9,14 +9,17 @@ using XenoTools.Scripts.SB;
 using XenoTools.AiDat;
 using XenoTools.Rev;
 using XenoTools.Formats.TPL;
+using XenoTools.Scripts.Effect;
 
 namespace XenoTools
 {
     class Program
     {
 
-        static void Main(string[] args)
-        {
+        static void Main(string[] args){
+			//UnpackPackArchive("/Users/amberbrault/Documents/Xenoblade Decomp/Game Files/Pack Files/obj.pkb");
+			//FindPossibleHashStrings();
+			DecompileEsb("ESB Files/testall.esb");
 		}
 
 		public static void DecryptRev(string path) {
@@ -27,8 +30,14 @@ namespace XenoTools
 			PackTools.Unpack(path);
 		}
 
+		public static void DecompileEsb(string path) {
+			ESBDecompiler decomper = new ESBDecompiler(path);
+			decomper.Decompile();
+			Console.WriteLine("Finished decompiling " + path + "!");
+		}
+
 		public static void FindPossibleHashStrings() {
-			string path = "/Users/amberbrault/Documents/Xenoblade Decomp/Game Files/Pack Files/script.pkh";
+			string path = "/Users/amberbrault/Documents/Xenoblade Decomp/Game Files/Pack Files/work.pkh";
 			PackTools.ReadPKHFile(path);
 			PackHeader packHeader = PackTools.packHeader;
 			List<ulong> fileHashes = packHeader.fileHashTable.ToList();

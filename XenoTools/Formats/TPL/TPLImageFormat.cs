@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace XenoTools.Formats
+namespace XenoTools.Formats.TPL
 {
 	public enum TPLImageFormat {
 		I4,
